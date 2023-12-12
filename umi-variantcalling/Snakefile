@@ -8,9 +8,11 @@ import importlib.util
 
 # ############ SETUP ##############################
 
-configfile: "../config/config1413.yaml"
-
+configfile: "../config/P3473/config_P3473.yaml"
 workdir: config["general"]["work_dir"] + "variantcalling/"
+
+OUTDIR = config["general"]["work_dir"] + "variantcalling"
+DEMUXDIR = config["general"]["work_dir"] + "demux"
 
 samples = os.listdir(config["general"]["work_dir"] + "demux/mapped")
 samples = list(filter(lambda x:'.realigned.bam' in x, samples))
@@ -50,7 +52,8 @@ wildcard_constraints:
 
 rule all:
     input:
-        expand("vardict/{sample}.vcf", sample = samples)
-        #"filter/variantcalls.csv"
+        expand(["{OUTDIR}/filter/variantcalls.csv"], 
+        sample = samples, OUTDIR = OUTDIR)
+        # expand("vardict/{sample}.vcf", sample = samples),
 
 ###########################################################################

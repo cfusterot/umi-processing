@@ -2,4 +2,6 @@
 refs/
 filtering/
 .snakemake/
-umi_all
+config/config*
+config/old/*
+config/P*

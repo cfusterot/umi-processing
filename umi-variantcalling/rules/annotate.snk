@@ -1,17 +1,17 @@
 rule annovar:
     input:
-        "table/{sample}.csv"
+        "{}/table/{{sample}}.csv".format(OUTDIR)
     output:
-        anno = "table/{sample}.anno.csv",
-        tmp = temp("table/{sample}.annotmp.csv")
+        anno = "{}/table/{{sample}}.anno.csv".format(OUTDIR),
+        tmp = temp("{}/table/{{sample}}.annotmp.csv".format(OUTDIR))
     log:
         "logs/annovar/{sample}.log"
     threads:
         8
     resources:
         time="00:30:00",
-        mem="20G",
-        mem_mb="20G",
+        mem="50G",
+        mem_mb="50G",
     params:
         annovar = config['tools']['annovar'],
         anno = get_anno_params,
@@ -29,10 +29,10 @@ if config["general"]["control"]:
     rule ebfilter:
         input:
             sample = lambda wildcards: input_bam[wildcards.sample],
-            vcf = "vardict/{sample}.vcf"
+            vcf = "{}/vardict/{{sample}}.vcf".format(OUTDIR)
         output:
-            vcf = "vardict/{sample}_EB.vcf",
-            txt = "vardict/{sample}_EB.txt"
+            vcf = "{}/vardict/{{sample}}_EB.vcf".format(OUTDIR),
+            txt = "{}/vardict/{{sample}}_EB.txt".format(OUTDIR)
         log:
             "logs/EBFilter/{sample}.log"
         threads:
@@ -53,9 +53,9 @@ if config["general"]["control"]:
 else:
     rule fake_ebfilter:
         input:
-            vcf = "vardict/{sample}.vcf"
+            vcf = "{}/vardict/{{sample}}.vcf".format(OUTDIR)
         output:
-            txt = "vardict/{sample}_EB.txt"
+            txt = "{}/vardict/{{sample}}_EB.txt".format(OUTDIR)
         log:
             "logs/EBFilter/{sample}.log"
         threads:
@@ -72,10 +72,10 @@ else:
 
 rule add_ebfilter:
     input:
-        anno = "table/{sample}.anno.csv",
-        ebfilter = "vardict/{sample}_EB.txt"
+        anno = "{}/table/{{sample}}.anno.csv".format(OUTDIR),
+        ebfilter = "{}/vardict/{{sample}}_EB.txt".format(OUTDIR)
     output:
-        "table/{sample}.edit.csv"
+        "{}/table/{{sample}}.edit.csv".format(OUTDIR)
     threads:
         1
     resources:
@@ -94,14 +94,14 @@ rule add_ebfilter:
         #Rscript {params.sd}/{params.rs} {params.wd}/{input.anno} {params.wd}/{output} {params.candidate} {params.driver} {params.CHIP} {params.wd}/{input.ebfilter}
 
 rule primer3:
-    input: "table/{sample}.edit.csv"
-    output: "table/{sample}.edit.primer.csv"
+    input: "{}/table/{{sample}}.edit.csv".format(OUTDIR)
+    output: "{}/table/{{sample}}.edit.primer.csv".format(OUTDIR)
     conda:
         "../env/primer3-env.yml"
     threads: 1
     resources:
         time="00:30:00",
-        mem_mb=get_mem_3_1
+        mem_mb="50G" #get_mem_3_1
     params:
         genome_split = config["primer3"]["split"]
     script:
@@ -110,19 +110,19 @@ rule primer3:
 
 rule detect_HDR:
     input:
-        filter_file = "table/{sample}.edit.csv",
-        bam = "filterbam/{sample}.bam",
-        index = "filterbam/{sample}.bai",
-        pileup = "pileup/{sample}.pileup"
+        filter_file = "{}/table/{{sample}}.edit.csv".format(OUTDIR),
+        bam = "{}/filterbam/{{sample}}.bam".format(OUTDIR),
+        index = "{}/filterbam/{{sample}}.bai".format(OUTDIR),
+        pileup = "{}/pileup/{{sample}}.pileup".format(OUTDIR)
     output:
-        HDR = "table/{sample}.edit.HDR.csv"
+        HDR = "{}/table/{{sample}}.edit.HDR.csv".format(OUTDIR)
     conda:
-        f"../env/HDR-env.yml"
+        "../env/HDR-env.yml"
     threads: 1
     resources:
         time=get_time_3_1,
-        mem=get_mem_40_10,
-        mem_mb=get_mem_40_10
+        mem="20G", #get_mem_40_10,
+        mem_mb="20G" #get_mem_40_10
     params:
         min_sim = config['HDR']['min_similarity'],
         min_q = config['HDR']['min_q'],
@@ -133,11 +133,11 @@ rule detect_HDR:
 
 rule combine_annotations:
     input:
-        anno_edit = "table/{sample}.edit.csv",
-        primer = "table/{sample}.edit.primer.csv",
-        hdr = "table/{sample}.edit.HDR.csv"
+        anno_edit = "{}/table/{{sample}}.edit.csv".format(OUTDIR),
+        primer = "{}/table/{{sample}}.edit.primer.csv".format(OUTDIR),
+        hdr = "{}/table/{{sample}}.edit.HDR.csv".format(OUTDIR)
     output: 
-        "filter/{sample}.edit.csv"
+        "{}/filter/{{sample}}.edit.csv".format(OUTDIR)
     params: 
         wd = config["general"]["work_dir"] + "variantcalling/",
         sd = config["general"]['snakedir'],
@@ -152,9 +152,9 @@ rule combine_annotations:
 
 rule combine_samples:
     input:
-        expand("filter/{sample}.edit.csv", sample = samples)
+        expand("{OUTDIR}/filter/{sample}.edit.csv", sample = samples, OUTDIR = OUTDIR)
     output: 
-        "filter/variantcalls.csv"
+        "{}/filter/variantcalls.csv".format(OUTDIR)
     params: 
         wd = config["general"]["work_dir"] + "variantcalling/",
         sd = config["general"]['snakedir'],

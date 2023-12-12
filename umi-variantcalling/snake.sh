@@ -8,21 +8,20 @@
 #SBATCH --cpus-per-task=1
 #SBATCH --time=144:00:00
 #SBATCH --mem-per-cpu=24000M
-#SBATCH --output=/fast/users/altwassr_c/scratch/slurm_logs/%x.%j.out
-#SBATCH --error=/fast/users/altwassr_c/scratch/slurm_logs/%x.%j.err
+#SBATCH --output=/data/gpfs-1/users/cofu10_c/scratch/P3473/slurm_logs/%x.%j.out
+#SBATCH --error=/data/gpfs-1/users/cofu10_c/scratch/P3473/slurm_logs/%x.%j.err
 
 snakemake \
     --nt \
     --jobs 60 \
-    --cluster-config ~/work/umi-data-processing/config/cluster_config.yaml \
+    --cluster-config /data/gpfs-1/users/cofu10_c/work/pipelines/umi-processing/config/cluster_config.yaml \
     --profile=cubi-v1 \
     --restart-times 2 \
     --keep-going \
-    --dry-run \
     --rerun-incomplete \
-    --use-conda --conda-prefix=/fast/users/altwassr_c/work/conda-envs/
-# --touch \
-# --skip-script-cleanup \
-# --reason \
-
-# --until annovar \
+    --use-conda --conda-prefix=/data/gpfs-1/users/cofu10_c/scratch/P3406/envs/ 
+    #--verbose
+    #--touch \
+    #--skip-script-cleanup \
+    #--reason 
+    #--until annovar

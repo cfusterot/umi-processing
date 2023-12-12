@@ -25,9 +25,9 @@
 #             #print('MUTFILE', anno_df, '\n', 'BED', bed_df)
 rule mutation_bed:
     input:
-        "table/{sample}.edit.csv"
+        "{}/table/{{sample}}.edit.csv".format(OUTDIR)
     output:
-        "filterbam/{sample}.bed"
+        "{}/filterbam/{{sample}}.bed".format(OUTDIR)
     params:
         config['filter_bam']['padding']
     resources:
@@ -51,29 +51,40 @@ rule mutation_bed:
 
 rule samtools_view:
     input:
-        lambda wildcards: input_bam[wildcards.sample], "filterbam/{sample}.bed"
+        sample=lambda wildcards: input_bam[wildcards.sample]
     output:
-        "filterbam/{sample}.bam"
+        "{}/filterbam/{{sample}}.bam".format(OUTDIR),
     params:
-        extra="-bhL filterbam/{sample}.bed" # optional params string
+        extra="-bhL ",
+        bed="{}/filterbam/{{sample}}.bed".format(OUTDIR) # optional params string
+    log:
+        "{}/logs/samtools_view/{{sample}}.log".format(OUTDIR)
     resources:
-        time="00:30:00"
-    wrapper:
-        "v1.0.0/bio/samtools/view"
+        time="00:30:00",
+        mem="60G",
+        mem_mb="60G"
+    shell:
+        """
+        samtools view {params.extra} {params.bed} {input.sample} -o {output} &> {log}
+        """
 
 rule samtools_index_vc:
     input:
-        "filterbam/{sample}.bam"
+        "{}/filterbam/{{sample}}.bam".format(OUTDIR)
     output:
-        "filterbam/{sample}.bai"
+        "{}/filterbam/{{sample}}.bai".format(OUTDIR)
     threads:
         4
+    log:
+        "{}/logs/samtools_index_vc/{{sample}}.log".format(OUTDIR)
     params:
         "" # optional params string
     resources:
         time="00:30:00"
-    wrapper:
-        "v1.0.0/bio/samtools/index"
+    shell:
+        """
+        samtools index -b {input} {output} -@ {threads} &> {log}
+        """
     
 
 rule mpilup:
@@ -82,7 +93,7 @@ rule mpilup:
         bam=lambda wildcards: input_bam[wildcards.sample],
         reference_genome=config["reference"]["genome"]
     output:
-        temp("mpileup/{sample}.raw.pileup.gz")
+        temp("{}/mpileup/{{sample}}.raw.pileup.gz".format(OUTDIR))
     log:
         "logs/samtools/mpileup/{sample}.log"
     params:
@@ -90,14 +101,14 @@ rule mpilup:
     resources:
         time="00:30:00"
     wrapper:
-        "v1.0.0/bio/samtools/mpileup"
+        "v3.1.0/bio/samtools/mpileup"
 
 
 rule filter_pileup:
     input:
-        "mpileup/{sample}.raw.pileup.gz"
+        "{}/mpileup/{{sample}}.raw.pileup.gz".format(OUTDIR)
     output:
-        "pileup/{sample}.pileup"
+        "{}/pileup/{{sample}}.pileup".format(OUTDIR)
     threads:
         2
     resources:
@@ -113,10 +124,10 @@ rule filter_pileup:
 
 rule IGVnav:
     input:
-        filter = "table/{sample}.filter1.csv",
-        bam = "filterbam/{sample}.bam"
+        filter = "{}/table/{{sample}}.filter1.csv".format(OUTDIR),
+        bam = "{}/filterbam/{{sample}}.bam".format(OUTDIR)
     output:
-        IGVNav = "filterbam/{sample}.filter1.txt"
+        IGVNav = "{}/filterbam/{{sample}}.filter1.txt".format(OUTDIR)
     threads:
         1
     resources:

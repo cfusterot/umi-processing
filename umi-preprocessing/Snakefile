@@ -19,7 +19,7 @@ from snakemake.utils import min_version
 
 min_version("5.7.1")
 
-configfile: "../config/config1686.yaml"
+configfile: "/data/gpfs-1/users/cofu10_c/work/pipelines/umi-processing/config/P3406/config_P3406.yaml"
 validate(config, schema="schemas/config.schema.yaml")
 
 SAMPLES = os.listdir(config["general"]["work_dir"] + "/demux/unmapped/")
