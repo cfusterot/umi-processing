@@ -51,12 +51,12 @@ rule mutation_bed:
 
 rule samtools_view:
     input:
-        sample=lambda wildcards: input_bam[wildcards.sample]
+        sample=lambda wildcards: input_bam[wildcards.sample],
+        bed="{}/filterbam/{{sample}}.bed".format(OUTDIR)
     output:
         "{}/filterbam/{{sample}}.bam".format(OUTDIR),
     params:
-        extra="-bhL ",
-        bed="{}/filterbam/{{sample}}.bed".format(OUTDIR) # optional params string
+        extra="-bhL "
     log:
         "{}/logs/samtools_view/{{sample}}.log".format(OUTDIR)
     resources:
@@ -65,7 +65,7 @@ rule samtools_view:
         mem_mb="60G"
     shell:
         """
-        samtools view {params.extra} {params.bed} {input.sample} -o {output} &> {log}
+        samtools view {params.extra} {input.bed} {input.sample} -o {output} &> {log}
         """
 
 rule samtools_index_vc:

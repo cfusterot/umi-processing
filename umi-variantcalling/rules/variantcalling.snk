@@ -15,8 +15,8 @@ rule vardict:
     resources:
         time="48:00:00",
         threads=3
-    conda:
-        "../env/vardict.yaml"
+    #conda:
+    #    "../env/vardict.yaml"
     shell:
         r"""
         mkdir -p vardict
@@ -32,8 +32,13 @@ rule bcf_to_vcf:
         extra=""  # optional parameters for bcftools view (except -o)
     resources:
         time="00:30:00"
-    wrapper:
-        "v3.1.0/bio/bcftools/view"
+    conda:
+        "../env/bcftools.yaml"
+    shell:
+        """
+        bcftools view {input} -Ov -o {output}
+        htsfile {output}
+        """
 
 rule bcftools_index:
     input:
@@ -44,13 +49,17 @@ rule bcftools_index:
         extra=""  # optional parameters for bcftools index
     resources:
         time="00:30:00"
-    wrapper:
-        "v3.1.0/bio/bcftools/index"
+    conda:
+        "../env/bcftools.yaml"
+    shell:
+        """
+        bcftools index {params.extra} {input} -o {output}
+        """
 
 rule norm_vcf:
     input:
-        "{}/vardict/{{sample}}.vcf.gz".format(OUTDIR)
-        #index = "{}/vardict/{{sample}}.vcf.gz.csi".format(OUTDIR)
+        vcf="{}/vardict/{{sample}}.vcf.gz".format(OUTDIR),
+        index="{}/vardict/{{sample}}.vcf.gz.csi".format(OUTDIR)
     output:
         "{}/vardict/{{sample}}.norm.vcf.gz".format(OUTDIR)
     log:
@@ -59,9 +68,11 @@ rule norm_vcf:
         extra=''.join(['-f ', config["reference"]['genome']])  # optional parameters for bcftools norm (except -o)
     resources:
         time="00:30:00"
+    conda:
+        "../env/bcftools.yaml"
     shell:
         """
-        bcftools norm {params.extra} {input} -o {output} &> {log}
+        bcftools norm {params.extra} {input.vcf} -o {output} &> {log}
         """
 
 rule vcf_to_table:
@@ -70,18 +81,18 @@ rule vcf_to_table:
     output:
         "{}/vardict/{{sample}}.csv".format(OUTDIR)
     params:
-        #wd = config["general"]['work_dir'] + "variantcalling/",
         sd = config["general"]['snakedir'],
-        rs = f"scripts/Vcf2Table.R",
+        rs = f"scripts/Vcf2Table.R"
+    conda:
+        "../env/vcf_to_table.yml"
+    log:
+        "{}/logs/vcf_to_table/{{sample}}.log".format(OUTDIR)
     resources:
         time="00:30:00"
-    conda:
-        "../env/vardict-pipeline.yml",
     shell:
         r"""
-        Rscript {params.sd}/{params.rs} {input} {output}
+        Rscript {params.sd}/{params.rs} {input} {output} &> {log}
         """
-        #Rscript {params.sd}/{params.rs} {params.wd}/{input} {params.wd}/{output}
 
 rule table_to_anno:
     input:
@@ -99,20 +110,3 @@ rule table_to_anno:
         r"""
         Rscript {params.sd}/{params.rs} {input} {output}
         """
-# rule table_to_anno:
-#     input:
-#         "vardict/{{sample}}.csv",
-#     output:
-#         "table/{{sample}}.csv"
-#     threads:
-#         1
-#     resources:
-#         time="00:30:00"
-#     params:
-#         wd = config["general"]['work_dir'] + "variantcalling/",
-#         sd = config["general"]['snakedir'],
-#         rs = f"scripts/SplitTable.R",
-#     shell:
-#         r"""
-#         Rscript {params.sd}/{params.rs} {params.wd}/{input} {params.wd}/{output}
-#         """

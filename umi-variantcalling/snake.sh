@@ -19,9 +19,11 @@ snakemake \
     --restart-times 2 \
     --keep-going \
     --rerun-incomplete \
-    --use-conda --conda-prefix=/data/gpfs-1/users/cofu10_c/scratch/P3406/envs/ 
-    #--verbose
+    --verbose \
+    --use-conda \
+    --conda-prefix=/data/gpfs-1/users/cofu10_c/scratch/P3473/envs/ 
     #--touch \
     #--skip-script-cleanup \
     #--reason 
     #--until annovar
+    #--until table_to_anno \
